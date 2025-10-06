@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ayala's Grocery List</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            min-height: 100vh;
+            transition: all 0.5s ease;
+            overflow-x: hidden;
+        }
+
+        body.light {
+            background: linear-gradient(135deg, #e3f2fd 0%, #ffffff 50%, #f3e5f5 100%);
+            color: #333;
+        }
+
+        body.dark {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d1b69 50%, #1a1a1a 100%);
+            color: #e0e0e0;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header Styles */
+        .header {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 24px;
+            padding: 32px;
+            margin-bottom: 32px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .dark .header {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(156, 39, 176, 0.1), rgba(233, 30, 99, 0.1));
+            pointer-events: none;
+        }
+
+        .header-content {
+            position: relative;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.8;
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .theme-toggle {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            font-size: 1.5rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .light .theme-toggle {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+        }
+
+        .dark .theme-toggle {
+            background: linear-gradient(135deg, #ffd700, #ffed4e);
+            color: #333;
+        }
+
+        .theme-toggle:hover {
+            transform: scale(1.1);
+        }
+
+        .stats {
+            text-align: right;
+        }
+
+        .stats .count {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .stats .label {
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+
+        .progress-bar {
+            margin-top: 24px;
+            height: 12px;
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .dark .progress-bar {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4caf50, #81c784);
+            border-radius: 6px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        /* Controls Section */
+        .controls {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 24px;
+            margin-bottom: 32px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .dark .controls {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .search-filters {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .search-input, .category-filter {
+            padding: 12px 16px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.7);
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .dark .search-input, .dark .category-filter {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        .search-input:focus, .category-filter:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .view-modes {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .view-mode-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .view-mode-btn.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .view-mode-btn:not(.active) {
+            background: rgba(0, 0, 0, 0.05);
+            color: #666;
+        }
+
+        .dark .view-mode-btn:not(.active) {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ccc;
+        }
+
+        .add-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .add-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Add Form */
+        .add-form {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 24px;
+            margin-bottom: 32px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            display: none;
+        }
+
+        .dark .add-form {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .form-input, .form-select {
+            padding: 12px 16px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.7);
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .dark .form-input, .dark .form-select {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        .quantity-group {
+            display: flex;
+            gap: 8px;
+        }
+
+        .quantity-input {
+            width: 80px;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #4caf50, #81c784);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Items List */
+        .category-section {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            margin-bottom: 24px;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .dark .category-section {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .category-header {
+            padding: 20px 24px;
+            color: white;
+            font-weight: 600;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .category-header .icon {
+            font-size: 1.5rem;
+        }
+
+        .category-header .count {
+            margin-left: auto;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+
+        .items-grid {
+            padding: 24px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 16px;
+        }
+
+        .item-card {
+            background: rgba(255, 255, 255, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 16px;
+            padding: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .dark .item-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .item-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .item-card.completed {
+            opacity: 0.6;
+            background: rgba(76, 175, 80, 0.1);
+        }
+
+        .item-main {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .checkbox {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid #ccc;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .checkbox.checked {
+            background: #4caf50;
+            border-color: #4caf50;
+            color: white;
+        }
+
+        .item-info {
+            flex: 1;
+        }
+
+        .item-name {
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 4px;
+        }
+
+        .item-name.completed {
+            text-decoration: line-through;
+            opacity: 0.7;
+        }
+
+        .item-details {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+
+        .priority-badge {
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .priority-low { background: #e8f5e8; color: #2e7d32; }
+        .priority-medium { background: #fff3e0; color: #f57c00; }
+        .priority-high { background: #ffebee; color: #c62828; }
+
+        .quantity-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .qty-btn {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: none;
+            background: #f0f0f0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .dark .qty-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        .qty-display {
+            padding: 4px 12px;
+            background: #f8f8f8;
+            border-radius: 8px;
+            min-width: 60px;
+            text-align: center;
+        }
+
+        .dark .qty-display {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .delete-btn {
+            margin-left: auto;
+            padding: 8px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .delete-btn:hover {
+            background: rgba(244, 67, 54, 0.1);
+        }
+
+        /* Action Buttons */
+        .actions {
+            text-align: center;
+            margin-top: 32px;
+        }
+
+        .clear-btn {
+            padding: 12px 24px;
+            background: #f44336;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .clear-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            opacity: 0.7;
+        }
+
+        .empty-state .icon {
+            font-size: 4rem;
+            margin-bottom: 16px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container { padding: 16px; }
+            .header h1 { font-size: 2rem; }
+            .header-content { flex-direction: column; text-align: center; }
+            .search-filters { grid-template-columns: 1fr; }
+            .form-grid { grid-template-columns: 1fr; }
+            .items-grid { grid-template-columns: 1fr; }
+        }
+
+        /* Category Colors */
+        .produce { background: linear-gradient(135deg, #66bb6a, #4caf50); }
+        .dairy { background: linear-gradient(135deg, #42a5f5, #2196f3); }
+        .meat { background: linear-gradient(135deg, #ef5350, #f44336); }
+        .bakery { background: linear-gradient(135deg, #ffa726, #ff9800); }
+        .pantry { background: linear-gradient(135deg, #ab47bc, #9c27b0); }
+        .frozen { background: linear-gradient(135deg, #26c6da, #00bcd4); }
+        .household { background: linear-gradient(135deg, #78909c, #607d8b); }
+        .other { background: linear-gradient(135deg, #5c6bc0, #3f51b5); }
+    </style>
+</head>
+<body class="light">
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div>
+                    <h1>Ayala's Grocery List</h1>
+                    <p>Lisandra's Kitchen</p>
+                </div>
+                <div class="header-controls">
+                    <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+                    <div class="stats">
+                        <div class="count" id="stats-count">0/0</div>
+                        <div class="label">Items completed</div>
+                    </div>
+                </div>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+        </header>
+
+        <!-- Controls -->
+        <div class="controls">
+            <div class="search-filters">
+                <input type="text" class="search-input" placeholder="Search items..." id="search-input">
+                <select class="category-filter" id="category-filter">
+                    <option value="all">All Categories</option>
+                    <option value="produce">🥬 Fresh Produce</option>
+                    <option value="dairy">🥛 Dairy & Eggs</option>
+                    <option value="meat">🥩 Meat & Seafood</option>
+                    <option value="bakery">🍞 Bakery</option>
+                    <option value="pantry">🥫 Pantry</option>
+                    <option value="frozen">🧊 Frozen</option>
+                    <option value="household">🧽 Household</option>
+                    <option value="other">📦 Other</option>
+                </select>
+            </div>
+            
+            <div class="view-modes">
+                <button class="view-mode-btn active" onclick="setViewMode('category')">📂 By Category</button>
+                <button class="view-mode-btn" onclick="setViewMode('all')">📋 All Items</button>
+            </div>
+            
+            <button class="add-btn" onclick="toggleAddForm()">➕ Add New Item</button>
+        </div>
+
+        <!-- Add Form -->
+        <div class="add-form" id="add-form">
+            <div class="form-grid">
+                <input type="text" class="form-input" placeholder="Item name" id="item-name">
+                <select class="form-select" id="item-category">
+                    <option value="produce">🥬 Fresh Produce</option>
+                    <option value="dairy">🥛 Dairy & Eggs</option>
+                    <option value="meat">🥩 Meat & Seafood</option>
+                    <option value="bakery">🍞 Bakery</option>
+                    <option value="pantry">🥫 Pantry</option>
+                    <option value="frozen">🧊 Frozen</option>
+                    <option value="household">🧽 Household</option>
+                    <option value="other">📦 Other</option>
+                </select>
+                <div class="quantity-group">
+                    <input type="number" class="form-input quantity-input" min="1" value="1" id="item-quantity">
+                    <select class="form-select" id="item-unit">
+                        <option value="pc">pieces</option>
+                        <option value="kg">kg</option>
+                        <option value="g">grams</option>
+                        <option value="l">liters</option>
+                        <option value="ml">ml</option>
+                        <option value="pack">pack</option>
+                        <option value="bottle">bottle</option>
+                        <option value="can">can</option>
+                    </select>
+                </div>
+                <select class="form-select" id="item-priority">
+                    <option value="low">🟢 Low Priority</option>
+                    <option value="medium">🟡 Medium Priority</option>
+                    <option value="high">🔴 High Priority</option>
+                </select>
+            </div>
+            <button class="submit-btn" onclick="addItem()">✨ Add Item</button>
+        </div>
+
+        <!-- Items List -->
+        <div id="items-container">
+            <!-- Items will be dynamically inserted here -->
+        </div>
+
+        <!-- Actions -->
+        <div class="actions">
+            <button class="clear-btn" id="clear-btn" onclick="clearCompleted()" disabled>
+                🗑️ Clear Completed (0)
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        let items = [];
+        let viewMode = 'category';
+        let isDark = false;
+
+        // Categories configuration
+        const categories = {
+            produce: { name: 'Fresh Produce', icon: '🥬', class: 'produce' },
+            dairy: { name: 'Dairy & Eggs', icon: '🥛', class: 'dairy' },
+            meat: { name: 'Meat & Seafood', icon: '🥩', class: 'meat' },
+            bakery: { name: 'Bakery', icon: '🍞', class: 'bakery' },
+            pantry: { name: 'Pantry', icon: '🥫', class: 'pantry' },
+            frozen: { name: 'Frozen', icon: '🧊', class: 'frozen' },
+            household: { name: 'Household', icon: '🧽', class: 'household' },
+            other: { name: 'Other', icon: '📦', class: 'other' }
+        };
+
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', function() {
+            loadData();
+            setupEventListeners();
+            render();
+        });
+
+        function setupEventListeners() {
+            document.getElementById('search-input').addEventListener('input', render);
+            document.getElementById('category-filter').addEventListener('change', render);
+            
+            document.getElementById('item-name').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') addItem();
+            });
+        }
+
+        function loadData() {
+            const savedItems = localStorage.getItem('modernGroceryItems');
+            const savedTheme = localStorage.getItem('modernGroceryTheme');
+            
+            if (savedItems) {
+                items = JSON.parse(savedItems);
+            }
+            
+            if (savedTheme) {
+                isDark = savedTheme === 'dark';
+                updateTheme();
+            }
+        }
+
+        function saveData() {
+            localStorage.setItem('modernGroceryItems', JSON.stringify(items));
+            localStorage.setItem('modernGroceryTheme', isDark ? 'dark' : 'light');
+        }
+
+        function toggleTheme() {
+            isDark = !isDark;
+            updateTheme();
+            saveData();
+        }
+
+        function updateTheme() {
+            document.body.className = isDark ? 'dark' : 'light';
+            document.querySelector('.theme-toggle').textContent = isDark ? '☀️' : '🌙';
+        }
+
+        function toggleAddForm() {
+            const form = document.getElementById('add-form');
+            const isVisible = form.style.display === 'block';
+            form.style.display = isVisible ? 'none' : 'block';
+            
+            const btn = document.querySelector('.add-btn');
+            btn.textContent = isVisible ? '➕ Add New Item' : '❌ Cancel';
+        }
+
+        function setViewMode(mode) {
+            viewMode = mode;
+            document.querySelectorAll('.view-mode-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            render();
+        }
+
+        function addItem() {
+            const name = document.getElementById('item-name').value.trim();
+            const category = document.getElementById('item-category').value;
+            const quantity = parseInt(document.getElementById('item-quantity').value) || 1;
+            const unit = document.getElementById('item-unit').value;
+            const priority = document.getElementById('item-priority').value;
+
+            if (!name) return;
+
+            const item = {
+                id: Date.now().toString(),
+                name,
+                category,
+                quantity,
+                unit,
+                priority,
+                completed: false,
+                addedAt: new Date()
+            };
+
+            items.push(item);
+            
+            // Reset form
+            document.getElementById('item-name').value = '';
+            document.getElementById('item-quantity').value = '1';
+            
+            toggleAddForm();
+            saveData();
+            render();
+        }
+
+        function toggleComplete(id) {
+            const item = items.find(item => item.id === id);
+            if (item) {
+                item.completed = !item.completed;
+                saveData();
+                render();
+            }
+        }
+
+        function updateQuantity(id, change) {
+            const item = items.find(item => item.id === id);
+            if (item) {
+                const newQuantity = item.quantity + change;
+                if (newQuantity >= 1) {
+                    item.quantity = newQuantity;
+                    saveData();
+                    render();
+                }
+            }
+        }
+
+        function deleteItem(id) {
+            items = items.filter(item => item.id !== id);
+            saveData();
+            render();
+        }
+
+        function clearCompleted() {
+            items = items.filter(item => !item.completed);
+            saveData();
+            render();
+        }
+
+        function getFilteredItems() {
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+            const categoryFilter = document.getElementById('category-filter').value;
+
+            return items.filter(item => {
+                const matchesSearch = item.name.toLowerCase().includes(searchTerm);
+                const matchesCategory = categoryFilter === 'all' || item.category === categoryFilter;
+                return matchesSearch && matchesCategory;
+            });
+        }
+
+        function render() {
+            const filteredItems = getFilteredItems();
+            const container = document.getElementById('items-container');
+            
+            // Update stats
+            const completedCount = items.filter(item => item.completed).length;
+            const totalCount = items.length;
+            const completionPercentage = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
+            
+            document.getElementById('stats-count').textContent = `${completedCount}/${totalCount}`;
+            document.getElementById('progress-fill').style.width = `${completionPercentage}%`;
+            
+            const clearBtn = document.getElementById('clear-btn');
+            clearBtn.disabled = completedCount === 0;
+            clearBtn.textContent = `🗑️ Clear Completed (${completedCount})`;
+
+            if (filteredItems.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">🛒</div>
+                        <h3>Your grocery list is empty</h3>
+                        <p>Start adding items to organize your shopping!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            if (viewMode === 'category') {
+                renderByCategory(filteredItems, container);
+            } else {
+                renderAllItems(filteredItems, container);
+            }
+        }
+
+        function renderByCategory(filteredItems, container) {
+            const groupedItems = {};
+            
+            // Group items by category
+            filteredItems.forEach(item => {
+                if (!groupedItems[item.category]) {
+                    groupedItems[item.category] = [];
+                }
+                groupedItems[item.category].push(item);
+            });
+
+            let html = '';
+            
+            Object.keys(groupedItems).forEach(categoryKey => {
+                const category = categories[categoryKey];
+                const items = groupedItems[categoryKey];
+                
+                html += `
+                    <div class="category-section">
+                        <div class="category-header ${category.class}">
+                            <span class="icon">${category.icon}</span>
+                            ${category.name}
+                            <span class="count">${items.length}</span>
+                        </div>
+                        <div class="items-grid">
+                            ${items.map(item => renderItem(item)).join('')}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        function renderAllItems(filteredItems, container) {
+            const html = `
+                <div class="category-section">
+                    <div class="category-header other">
+                        <span class="icon">📋</span>
+                        All Items
+                        <span class="count">${filteredItems.length}</span>
+                    </div>
+                    <div class="items-grid">
+                        ${filteredItems.map(item => renderItem(item)).join('')}
+                    </div>
+                </div>
+            `;
+            
+            container.innerHTML = html;
+        }
+
+        function renderItem(item) {
+            return `
+                <div class="item-card ${item.completed ? 'completed' : ''}">
+                    <div class="item-main">
+                        <div class="checkbox ${item.completed ? 'checked' : ''}" onclick="toggleComplete('${item.id}')">
+                            ${item.completed ? '✓' : ''}
+                        </div>
+                        <div class="item-info">
+                            <div class="item-name ${item.completed ? 'completed' : ''}">${item.name}</div>
+                            <div class="item-details">
+                                <span class="priority-badge priority-${item.priority}">${item.priority}</span>
+                            </div>
+                            <div class="quantity-controls">
+                                <button class="qty-btn" onclick="updateQuantity('${item.id}', -1)">−</button>
+                                <div class="qty-display">${item.quantity} ${item.unit}</div>
+                                <button class="qty-btn" onclick="updateQuantity('${item.id}', 1)">+</button>
+                            </div>
+                        </div>
+                        <button class="delete-btn" onclick="deleteItem('${item.id}')">🗑️</button>
+                    </div>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>
